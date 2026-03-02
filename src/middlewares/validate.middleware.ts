@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodType } from "zod";
+import { ZodError, ZodType } from "zod";
 
 const validate =
   (schema: ZodType<any>) =>
@@ -7,10 +7,20 @@ const validate =
     try {
       req.body = schema.parse(req.body);
       next();
-    } catch (error: any) {
-      return res.status(400).json({
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          success: false,
+          errors: error.issues.map((issue) => ({
+            field: issue.path[0],
+            message: issue.message,
+          })),
+        });
+      }
+
+      return res.status(500).json({
         success: false,
-        errors: error.errors
+        message: "Internal server error",
       });
     }
   };

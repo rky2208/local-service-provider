@@ -4,10 +4,10 @@ const generateToken = (user: any) => {
   return jwt.sign(
     {
       userId: user._id,
-      role: user.role
+      role: user.role,
     },
     process.env.JWT_SECRET as string,
-    { expiresIn: "7d" }
+    { expiresIn: "1d" }
   );
 };
 
