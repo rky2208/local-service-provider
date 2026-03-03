@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.model";
+import Provider from "../models/Provider.model";
 import generateToken from "../utils/generateToken";
 import AppError from "../utils/AppError";
 import { Role } from "../constants/roles";
@@ -58,19 +59,22 @@ const login = async ({ email, password }: LoginInput) => {
     throw new AppError("User password not found", 500);
   }
 
-  // 2️. Compare password
+  // 2. Find user details from provider model
+  const provider = await Provider.findOne({ userId: user._id });
+
+  // 3. Compare password
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
     throw new AppError("Invalid credentials", 401);
   }
 
-  // 3️. Prevent unapproved providers from logging in
-  if (user.role === Role.PROVIDER && !user.isApproved) {
+  // 4. Prevent unapproved providers from logging in
+  if (user.role === Role.PROVIDER && !provider?.isApproved) {
     throw new AppError("Provider not approved yet", 403);
   }
 
-  // 4. Generate JWT token
+  // 5. Generate JWT token
   const token = generateToken(user);
 
   return { user, token };
