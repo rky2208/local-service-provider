@@ -28,7 +28,7 @@ const register = async ({ name, email, password, role }: RegisterInput) => {
     throw new AppError("Email already registered", 400);
   }
 
-  // 2️. Hash password
+  // 2️. Create hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // 3️. Create user
@@ -39,7 +39,14 @@ const register = async ({ name, email, password, role }: RegisterInput) => {
     role,
   });
 
-  // 4️. Generate JWT Token
+  // 4. Create empty provider profile if role is PROVIDER
+  if (role === Role.PROVIDER) {
+    await Provider.create({
+      userId: user._id,
+    });
+  }
+
+  // 5. Generate JWT Token
   const token = generateToken(user);
 
   return { user, token };
@@ -59,25 +66,35 @@ const login = async ({ email, password }: LoginInput) => {
     throw new AppError("User password not found", 500);
   }
 
-  // 2. Find user details from provider model
-  const provider = await Provider.findOne({ userId: user._id });
-
-  // 3. Compare password
+  // 2. Compare password
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
     throw new AppError("Invalid credentials", 401);
   }
 
-  // 4. Prevent unapproved providers from logging in
-  if (user.role === Role.PROVIDER && !provider?.isApproved) {
-    throw new AppError("Provider not approved yet", 403);
+  let profileCompleted: boolean | undefined;
+  let isApproved: boolean | undefined;
+
+  // 3. Find profileCompleted status of user type provider, from provider model
+  if (user.role === Role.PROVIDER) {
+    const providerProfile = await Provider.findOne({
+      userId: user._id,
+    }).select("profileCompleted isApproved");
+
+    profileCompleted = providerProfile?.profileCompleted ?? false;
+    isApproved = providerProfile?.isApproved ?? false;
   }
 
-  // 5. Generate JWT token
+  // 4. Generate JWT token
   const token = generateToken(user);
 
-  return { user, token };
+  return {
+    user,
+    profileCompleted,
+    isApproved,
+    token,
+  };
 };
 
 export default {

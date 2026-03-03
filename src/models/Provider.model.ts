@@ -8,6 +8,7 @@ export interface IProviderProfile extends Document {
   experienceYears: number;
   serviceCity: string;
   isApproved: boolean;
+  profileCompleted: boolean;
   availabilityStatus: "Available" | "Unavailable";
   basePrice?: number;
   priceDescription?: string;
@@ -56,6 +57,11 @@ const providerProfileSchema = new Schema<IProviderProfile>(
     },
 
     isApproved: {
+      type: Boolean,
+      default: false,
+    },
+
+    profileCompleted: {
       type: Boolean,
       default: false,
     },

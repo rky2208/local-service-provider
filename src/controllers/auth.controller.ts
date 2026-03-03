@@ -13,15 +13,20 @@ export const register = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    user: {
+    data: {
+      userId: user._id,
       email: user.email,
+      role: user.role,
+      profileCompleted: false,
     },
     message: "Successfully register!",
   });
 });
 
 export const login = asyncHandler(async (req, res) => {
-  const { token } = await authService.login(req.body);
+  const { token, user, profileCompleted, isApproved } = await authService.login(
+    req.body
+  );
 
   res.cookie("token", token, {
     httpOnly: true, // Protects against XSS
@@ -32,6 +37,13 @@ export const login = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
+    data: {
+      userId: user._id,
+      email: user.email,
+      role: user.role,
+      profileCompleted,
+      isApproved,
+    },
     message: "Logged in successfully!",
   });
 });
